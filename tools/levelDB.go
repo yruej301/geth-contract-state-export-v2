@@ -2,6 +2,8 @@ package tools
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -9,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
-	"math/big"
 )
 
 func ContractState(ldbPath string, addr string) {
@@ -30,6 +31,7 @@ type stateFound struct {
 func getStateTrees(ldb ethdb.Database, stopAt int) []stateFound {
 	var res []stateFound
 	headerHash, _ := ldb.Get(headHeaderKey)
+	fmt.Printf("headerHash: %x\n", headerHash)
 	for headerHash != nil {
 		// print the header hash
 		var blockHeader types.Header
@@ -40,8 +42,12 @@ func getStateTrees(ldb ethdb.Database, stopAt int) []stateFound {
 		blockHeaderRaw, _ := ldb.Get(append(headerPrefix[:], append(blockNb, headerHash...)...))
 		rlp.DecodeBytes(blockHeaderRaw, &blockHeader)
 
+		fmt.Printf("blockHeader: %x\n", blockHeader)
 		stateRootNode, _ := ldb.Get(blockHeader.Root.Bytes())
 
+		blockNbPretty := new(big.Int).SetBytes(blockNb)
+		fmt.Printf("blocknNo: %s\n", blockNbPretty.String())
+		fmt.Printf("rootNode: %x\n", stateRootNode)
 		if len(stateRootNode) > 0 {
 			res = append(res, stateFound{blockHeader.Number, blockHeader.Root})
 			if stopAt > 0 && len(res) == stopAt {
@@ -84,7 +90,7 @@ func getStateForContract(ldb ethdb.Database, stateRootNode common.Hash, addr str
 			panic(err)
 		}
 		// print out he xencoded key and value
-		fmt.Printf("0x%x: 0x%x\n", it.Key, value)
+		// fmt.Printf("0x%x: 0x%x\n", it.Key, value)
 	}
 }
 
